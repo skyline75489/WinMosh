@@ -623,6 +623,23 @@ impl Transport {
 
     // ── send_in_fragments (1:1 with mosh) ──────────────────────────
     async fn send_in_fragments(&mut self, diff: &[u8], new_num: u64, old_num: u64) -> Result<()> {
+        // Log keystroke bytes when there's a data diff (non-empty user input).
+        if !diff.is_empty() {
+            if let Ok(user_msg) = proto::userinput::UserMessage::decode(diff) {
+                for inst in &user_msg.instruction {
+                    if let Some(ref ks) = inst.keystroke {
+                        if let Some(ref keys) = ks.keys {
+                            if !keys.is_empty() {
+                                log::debug!(
+                                    "transport sending keystroke bytes: {:?}",
+                                    String::from_utf8_lossy(keys)
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
         let instruction = proto::transportinstruction::Instruction {
             protocol_version: Some(MOSH_PROTOCOL_VERSION),
             old_num: Some(old_num),
