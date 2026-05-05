@@ -370,6 +370,7 @@ async fn run_session(
 
                     let mouse_mode = latest_remote_fb.mouse_mode;
                     let sgr = latest_remote_fb.sgr_mouse;
+                    let is_down = matches!(mouse_event.kind, MouseEventKind::Down(_));
                     log::debug!(
                         "mouse event: kind={:?} col={} row={} mods={:?} mode={:?} sgr={}",
                         mouse_event.kind,
@@ -386,6 +387,9 @@ async fn run_session(
                             log::debug!("mouse sgr encoded: {:?}", String::from_utf8_lossy(&data));
                             transport.push_user_input(&data);
                             predictor.new_user_input_batch(&data, &local_framebuffer);
+                            if is_down {
+                                transport.flush().await?;
+                            }
                         } else {
                             log::debug!("mouse event filtered out (mode={:?})", mouse_mode);
                         }

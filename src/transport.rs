@@ -692,6 +692,23 @@ impl Transport {
         Ok(())
     }
 
+    /// Force-send pending user input immediately, bypassing send-interval
+    /// timing. Used for latency-sensitive input like mouse events where
+    /// press/release pairing relies on tight inter-arrival timing.
+    pub async fn flush(&mut self) -> Result<()> {
+        if self.remote_closed.is_some() {
+            return Ok(());
+        }
+        let presumed = &self.sent_states[self.assumed_receiver_state];
+        let diff = self.current_state.diff_from(&presumed.state);
+        if diff.is_empty() {
+            return Ok(());
+        }
+        self.send_to_receiver(&diff).await?;
+        self.mindelay_clock = None;
+        Ok(())
+    }
+
     // ── process_acknowledgment_through (1:1 with mosh) ─────────────
     fn process_acknowledgment_through(&mut self, ack_num: u64) {
         // Find entry with matching num
