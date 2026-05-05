@@ -370,7 +370,12 @@ async fn run_session(
 
                     let mouse_mode = latest_remote_fb.mouse_mode;
                     let sgr = latest_remote_fb.sgr_mouse;
-                    let is_down = matches!(mouse_event.kind, MouseEventKind::Down(_));
+                    // Flush on Up (to batch Down+Up for click detection) and on
+                    // Drag (to start drag operations without waiting for send_interval).
+                    let needs_flush = matches!(
+                        mouse_event.kind,
+                        MouseEventKind::Up(_) | MouseEventKind::Drag(_)
+                    );
                     log::debug!(
                         "mouse event: kind={:?} col={} row={} mods={:?} mode={:?} sgr={}",
                         mouse_event.kind,
@@ -387,7 +392,7 @@ async fn run_session(
                             log::debug!("mouse sgr encoded: {:?}", String::from_utf8_lossy(&data));
                             transport.push_user_input(&data);
                             predictor.new_user_input_batch(&data, &local_framebuffer);
-                            if is_down {
+                            if needs_flush {
                                 transport.flush().await?;
                             }
                         } else {

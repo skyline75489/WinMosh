@@ -631,8 +631,9 @@ impl Transport {
                         if let Some(ref keys) = ks.keys {
                             if !keys.is_empty() {
                                 log::debug!(
-                                    "transport sending keystroke bytes: {:?}",
-                                    String::from_utf8_lossy(keys)
+                                    "transport sending keystroke bytes: {:?} hex={:02x?}",
+                                    String::from_utf8_lossy(keys),
+                                    keys.as_slice()
                                 );
                             }
                         }
